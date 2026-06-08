@@ -1,0 +1,53 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: ${{ matrix.project }} tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      # Split API and E2E into separate runners so each gets its own
+      # source IP — and therefore its own /api/auth rate-limit budget.
+      matrix:
+        project: [api, e2e]
+
+    env:
+      BASE_URL: ${{ vars.BASE_URL || 'https://qa-a.recruitment.mediamarslab.com' }}
+      X_ACCESS_KEY: ${{ secrets.X_ACCESS_KEY }}
+      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      ANALYTICS_BASIC_USER: ${{ vars.ANALYTICS_BASIC_USER || 'QA_USER' }}
+      ANALYTICS_BASIC_PASSWORD: ${{ secrets.ANALYTICS_BASIC_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run ${{ matrix.project }} tests
+        run: npx playwright test --project=${{ matrix.project }}
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: playwright-report/
+          retention-days: 14

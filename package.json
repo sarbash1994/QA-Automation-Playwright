@@ -1,0 +1,23 @@
+{
+  "name": "qa-automation-playwright",
+  "version": "1.0.0",
+  "description": "Playwright + TypeScript automation suite (API + E2E) for the MediaMarsLab QA test application.",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:api": "playwright test --project=api",
+    "test:e2e": "playwright test --project=e2e",
+    "test:headed": "playwright test --project=e2e --headed",
+    "report": "playwright show-report",
+    "lint": "tsc --noEmit",
+    "codegen": "playwright codegen"
+  },
+  "keywords": ["playwright", "typescript", "qa", "automation", "e2e", "api"],
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^22.10.0",
+    "dotenv": "^16.4.7",
+    "typescript": "^5.7.2"
+  }
+}
