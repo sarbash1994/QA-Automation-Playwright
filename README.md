@@ -1,5 +1,10 @@
 # QA Automation — Playwright + TypeScript
 
+[![Playwright Tests](https://github.com/sarbash1994/QA-Automation-Playwright/actions/workflows/playwright.yml/badge.svg)](https://github.com/sarbash1994/QA-Automation-Playwright/actions/workflows/playwright.yml)
+[![Allure Report](https://img.shields.io/badge/Allure-live%20report-success?logo=allure&logoColor=white)](https://sarbash1994.github.io/QA-Automation-Playwright/)
+
+📊 **Live Allure report:** https://sarbash1994.github.io/QA-Automation-Playwright/ (published from CI on every push to `main`, with trends across runs).
+
 Automated test suite (API + E2E) for the MediaMarsLab QA test application
 ([qa-a.recruitment.mediamarslab.com](https://qa-a.recruitment.mediamarslab.com/)).
 
@@ -186,9 +191,13 @@ npm run allure:generate   # → allure-report/
 npm run allure:open
 ```
 
-In CI every project uploads its `allure-results`, and a final job merges them
-into a single **`allure-report`** artifact (requires Java, provided by
-`setup-java`).
+In CI every project uploads its `allure-results`; a final job merges them,
+generates the HTML report (carrying **trends** forward from the previously
+published report) and **deploys it to GitHub Pages**:
+
+➡️ **https://sarbash1994.github.io/QA-Automation-Playwright/**
+
+The same report is also kept as a downloadable `allure-report` workflow artifact.
 
 ---
 

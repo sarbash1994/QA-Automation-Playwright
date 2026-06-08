@@ -61,10 +61,21 @@ jobs:
           retention-days: 14
 
   allure-report:
-    name: Publish aggregated Allure report
+    name: Publish Allure report to GitHub Pages
     needs: test
-    if: ${{ !cancelled() }}
+    # Publish even if some tests failed (the report shows them), but not for PRs.
+    if: ${{ !cancelled() && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -88,12 +99,34 @@ jobs:
           path: allure-raw
           merge-multiple: true
 
+      - name: Restore Allure history (best effort, enables trends across runs)
+        run: |
+          mkdir -p allure-raw/history
+          base="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/history"
+          for f in history.json history-trend.json categories-trend.json duration-trend.json retry-trend.json; do
+            curl -fsSL "$base/$f" -o "allure-raw/history/$f" || true
+          done
+
       - name: Generate Allure HTML report
         run: npx allure generate allure-raw --clean -o allure-report
 
-      - name: Upload Allure report
+      - name: Upload Allure report (downloadable artifact)
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
           path: allure-report/
           retention-days: 14
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: allure-report
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
