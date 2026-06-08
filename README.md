@@ -23,10 +23,17 @@ cp .env.example .env        # then fill in X_ACCESS_KEY, ADMIN_*, ANALYTICS_BASI
 
 # 3. run
 npm run test:api            # API suite only (no browser)
-npm run test:e2e            # E2E suite only (Chromium)
-npm test                    # everything
-npm run report              # open the last HTML report
+npm run test:e2e            # E2E across Chromium + Firefox + WebKit
+npm run test:e2e:chromium   # E2E on a single browser
+npm test                    # everything (see rate-limit note below)
+npm run report              # open the last Playwright HTML report
+npm run allure:serve        # open the Allure report
 ```
+
+> ⚠️ **Rate limit:** run `test:api` and `test:e2e` in **separate ~15-min
+> windows** (or rely on CI). The strict `/api/auth` limiter (40 / 900s) means
+> the *combined* full run can exceed budget on a single IP. CI sidesteps this by
+> putting each project on its own runner.
 
 > The credentials are issued once by the vacancy form and are **not** committed.
 > Ask the author for a ready `.env`, or generate your own application.
@@ -117,7 +124,8 @@ src/
 └─ utils/                 # types + unique test-data factories
 
 tests/
-├─ api/   access-control · auth · todos · tags · profile · analytics · applications
+├─ api/   access-control · auth · todos · tags · profile · analytics ·
+│         validation · applications
 └─ e2e/   auth · todos · profile · admin
 ```
 
@@ -146,14 +154,41 @@ tests/
 - **Analytics** *(highlight)* — every event type & schema, failed-login &
   failed-password `reason`, numeric gender, `photoUpload` filename, and
   **consent gating** (off ⇒ not recorded, on ⇒ recorded).
+- **Validation / negative** — invalid register input (missing/invalid email,
+  short password, bad gender), malformed login, tag rules (missing name/colour,
+  bad colour), todo rules (empty/whitespace/over-long title, bad ids), profile &
+  password validation, and `404`/`400` for unknown/malformed resource ids.
 - **Applications** *(opt-in)* — bootstrap contract + validation.
 
-**E2E (`tests/e2e`)**
+**E2E (`tests/e2e`)** — run on **Chromium, Firefox and WebKit**
 - **Auth** — register→dashboard, login, invalid login, logout, auth-guard redirect.
 - **Todos** — create/complete/delete, tag creation, and a **UI → analytics**
   cross-check.
-- **Profile** — name save, password modal (success + mismatch), consent toggle.
+- **Profile** — name save, password modal (success + mismatch), consent toggle,
+  client-side validation (empty title rejected in the UI).
 - **Admin** — login, user search, event-JSON inspection, wrong-credentials error.
+
+## Cross-browser
+
+E2E specs run as three projects — `e2e-chromium`, `e2e-firefox`, `e2e-webkit` —
+sharing the same Page Objects. Run all three with `npm run test:e2e`, or a
+single engine with `npm run test:e2e:firefox` (etc.). In CI each browser is a
+separate matrix leg.
+
+## Reporting (Allure)
+
+The Allure reporter (`allure-playwright`) runs alongside Playwright's HTML
+reporter and writes `allure-results/`.
+
+```bash
+npm run allure:serve      # generate + open in one step
+npm run allure:generate   # → allure-report/
+npm run allure:open
+```
+
+In CI every project uploads its `allure-results`, and a final job merges them
+into a single **`allure-report`** artifact (requires Java, provided by
+`setup-java`).
 
 ---
 
@@ -171,6 +206,18 @@ tests/
 - **Very strict auth/application limiters** make naive "fresh user per test"
   suites fail with 429; documented and engineered around above.
 
+### Validation defects (encoded as `test.fail()` in `validation.spec.ts`)
+- **No email-format validation on register** — `not-an-email` is accepted (201).
+- **Inconsistent password policy** — register accepts a 3-char password, but the
+  password-change endpoint enforces a 6-char minimum.
+- **500 instead of 400** — registering with a **missing name** or an **invalid
+  gender** returns `500 "Error registering user"` rather than a validation error.
+- **Invalid `tagId` silently ignored** — creating a todo with a non-existent
+  `tagId` returns 201 with the tag dropped, instead of a 400.
+
+(Validation that *is* correct — tags, todos title length, profile/password,
+malformed vs missing ObjectId → 400 vs 404 — is covered by passing assertions.)
+
 ---
 
 ## CI
@@ -182,4 +229,4 @@ Secrets are read from repository **Secrets** (`X_ACCESS_KEY`, `ADMIN_EMAIL`,
 an artifact.
 
 ## Tech stack
-Playwright 1.60 · TypeScript 5 · Node 20+.
+Playwright 1.60 (Chromium · Firefox · WebKit) · TypeScript 5 · Allure · Node 20+.

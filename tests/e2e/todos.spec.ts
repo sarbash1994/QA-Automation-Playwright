@@ -18,6 +18,14 @@ test.describe('Todos E2E @e2e', () => {
     await expect(dashboardPage.todoByTitle(title)).toHaveCount(0);
   });
 
+  test('rejects an empty note with a validation toast (client-side)', async ({ dashboardPage }) => {
+    const before = await dashboardPage.todoItems().count();
+    await dashboardPage.todoInput.fill('   ');
+    await dashboardPage.addTodoButton.click();
+    await expect(dashboardPage.toast('Название заметки обязательно')).toBeVisible();
+    await expect(dashboardPage.todoItems()).toHaveCount(before); // nothing was added
+  });
+
   test('creates a colour-coded tag from the sidebar', async ({ dashboardPage }) => {
     const tag = uniqueTagName('uitag');
     await dashboardPage.createTag(tag);

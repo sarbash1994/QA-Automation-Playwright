@@ -9,15 +9,15 @@ on:
 
 jobs:
   test:
-    name: ${{ matrix.project }} tests
+    name: ${{ matrix.project }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
-      # Split API and E2E into separate runners so each gets its own
-      # source IP — and therefore its own /api/auth rate-limit budget.
+      # Each project runs on its own runner → its own source IP → its own
+      # /api/auth rate-limit budget (40 / 900s).
       matrix:
-        project: [api, e2e]
+        project: [api, e2e-chromium, e2e-firefox, e2e-webkit]
 
     env:
       BASE_URL: ${{ vars.BASE_URL || 'https://qa-a.recruitment.mediamarslab.com' }}
@@ -39,7 +39,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps
 
       - name: Run ${{ matrix.project }} tests
         run: npx playwright test --project=${{ matrix.project }}
@@ -50,4 +50,50 @@ jobs:
         with:
           name: playwright-report-${{ matrix.project }}
           path: playwright-report/
+          retention-days: 14
+
+      - name: Upload Allure results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-${{ matrix.project }}
+          path: allure-results/
+          retention-days: 14
+
+  allure-report:
+    name: Publish aggregated Allure report
+    needs: test
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download all Allure results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: allure-results-*
+          path: allure-raw
+          merge-multiple: true
+
+      - name: Generate Allure HTML report
+        run: npx allure generate allure-raw --clean -o allure-report
+
+      - name: Upload Allure report
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: allure-report/
           retention-days: 14

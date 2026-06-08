@@ -2,15 +2,21 @@ import { defineConfig, devices } from '@playwright/test';
 import { ENV } from './src/config/env';
 
 /**
- * Two projects:
- *  - "api"  → pure request-context tests (no browser). Fast, deterministic.
- *  - "e2e"  → browser UI journeys (Chromium).
+ * Projects:
+ *  - "api"          → request-context tests (no browser). Fast, deterministic.
+ *  - "e2e-chromium" / "e2e-firefox" / "e2e-webkit" → browser UI journeys.
  *
  * The X-Access-Key gate applies to every /api/* call (UI and API alike), so it
  * is injected via `extraHTTPHeaders` at the context level. In the browser this
  * transparently attaches the header to the fetch/XHR calls the app makes,
  * which is exactly what makes the SPA work under automation.
  */
+const e2eBrowsers = [
+  { name: 'e2e-chromium', device: 'Desktop Chrome' },
+  { name: 'e2e-firefox', device: 'Desktop Firefox' },
+  { name: 'e2e-webkit', device: 'Desktop Safari' },
+] as const;
+
 export default defineConfig({
   testDir: './tests',
   /**
@@ -26,9 +32,12 @@ export default defineConfig({
   timeout: 90_000,
   expect: { timeout: 10_000 },
 
-  reporter: process.env.CI
-    ? [['html', { open: 'never' }], ['list'], ['github']]
-    : [['html', { open: 'never' }], ['list']],
+  reporter: [
+    ['html', { open: 'never' }],
+    ['list'],
+    ['allure-playwright', { detail: true, resultsDir: 'allure-results' }],
+    ...(process.env.CI ? [['github'] as const] : []),
+  ],
 
   use: {
     baseURL: ENV.baseURL,
@@ -45,10 +54,10 @@ export default defineConfig({
       name: 'api',
       testDir: './tests/api',
     },
-    {
-      name: 'e2e',
+    ...e2eBrowsers.map(({ name, device }) => ({
+      name,
       testDir: './tests/e2e',
-      use: { ...devices['Desktop Chrome'] },
-    },
+      use: { ...devices[device] },
+    })),
   ],
 });

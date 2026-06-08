@@ -6,17 +6,25 @@
   "scripts": {
     "test": "playwright test",
     "test:api": "playwright test --project=api",
-    "test:e2e": "playwright test --project=e2e",
-    "test:headed": "playwright test --project=e2e --headed",
+    "test:e2e": "playwright test --project=e2e-chromium --project=e2e-firefox --project=e2e-webkit",
+    "test:e2e:chromium": "playwright test --project=e2e-chromium",
+    "test:e2e:firefox": "playwright test --project=e2e-firefox",
+    "test:e2e:webkit": "playwright test --project=e2e-webkit",
+    "test:headed": "playwright test --project=e2e-chromium --headed",
     "report": "playwright show-report",
+    "allure:generate": "allure generate allure-results --clean -o allure-report",
+    "allure:open": "allure open allure-report",
+    "allure:serve": "allure serve allure-results",
     "lint": "tsc --noEmit",
     "codegen": "playwright codegen"
   },
-  "keywords": ["playwright", "typescript", "qa", "automation", "e2e", "api"],
+  "keywords": ["playwright", "typescript", "qa", "automation", "e2e", "api", "allure"],
   "license": "MIT",
   "devDependencies": {
     "@playwright/test": "^1.49.0",
     "@types/node": "^22.10.0",
+    "allure-commandline": "^2.32.0",
+    "allure-playwright": "^3.0.0",
     "dotenv": "^16.4.7",
     "typescript": "^5.7.2"
   }
