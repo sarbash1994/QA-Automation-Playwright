@@ -23,13 +23,11 @@ test.describe('Profile E2E @e2e', () => {
     await expect(profilePage.passwordMessage).toContainText('Пароли не совпадают');
   });
 
-  test('toggles the analytics-consent switch and saves', async ({ page, profilePage }) => {
+  test('toggles the analytics-consent switch and saves', async ({ page, profilePage, sharedUser }) => {
     await profilePage.setConsent(false);
     await profilePage.save();
     await expect(page).toHaveURL(/dashboard\.html/);
-    // restore consent so shared-user analytics keeps recording
-    await profilePage.open();
-    await profilePage.setConsent(true);
-    await profilePage.save();
+    // Restore consent via the API (reliable) so shared-user analytics keeps recording.
+    await sharedUser.api.patchProfile({ internalAnalyticsConsent: true });
   });
 });
