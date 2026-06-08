@@ -28,7 +28,10 @@ export class ProfilePage extends BasePage {
 
   async open(): Promise<void> {
     await this.goto('/profile.html');
-    await expect(this.name).toBeVisible();
+    // Wait until loadProfile() has populated the form. The email field is always
+    // filled from the server, so a non-empty value is a reliable "ready" signal —
+    // interacting before this races the async load and submits stale/empty data.
+    await expect(this.email).not.toHaveValue('');
   }
 
   async setName(value: string): Promise<void> {
