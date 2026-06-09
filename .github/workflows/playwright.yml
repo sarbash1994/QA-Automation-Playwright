@@ -110,6 +110,20 @@ jobs:
       - name: Generate Allure HTML report
         run: npx allure generate allure-raw --clean -o allure-report
 
+      - name: Generate test-results badge JSON
+        run: |
+          node -e "
+            const fs = require('fs');
+            const summary = JSON.parse(fs.readFileSync('allure-report/widgets/summary.json', 'utf8'));
+            const { passed = 0, failed = 0, broken = 0, total = 0 } = summary.statistic;
+            const bad = failed + broken;
+            const color = bad > 0 ? 'red' : total === 0 ? 'lightgrey' : 'brightgreen';
+            const message = bad > 0 ? passed + '/' + total + ' passed' : total + ' passed';
+            const badge = { schemaVersion: 1, label: 'tests', message, color };
+            fs.writeFileSync('allure-report/badge.json', JSON.stringify(badge));
+            console.log('Badge:', JSON.stringify(badge));
+          "
+
       - name: Upload Allure report (downloadable artifact)
         uses: actions/upload-artifact@v4
         with:

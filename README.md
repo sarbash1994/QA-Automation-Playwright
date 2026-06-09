@@ -1,6 +1,7 @@
 # QA Automation — Playwright + TypeScript
 
 [![Playwright Tests](https://github.com/sarbash1994/QA-Automation-Playwright/actions/workflows/playwright.yml/badge.svg)](https://github.com/sarbash1994/QA-Automation-Playwright/actions/workflows/playwright.yml)
+[![Test Results](https://img.shields.io/endpoint?url=https://sarbash1994.github.io/QA-Automation-Playwright/badge.json&cacheSeconds=300)](https://sarbash1994.github.io/QA-Automation-Playwright/)
 [![Allure Report](https://img.shields.io/badge/Allure-live%20report-success?logo=allure&logoColor=white)](https://sarbash1994.github.io/QA-Automation-Playwright/)
 
 📊 **Live Allure report:** https://sarbash1994.github.io/QA-Automation-Playwright/ (published from CI on every push to `main`, with trends across runs).
